@@ -1,1 +1,1 @@
-"# scheduling-assistant-python" 
+# scheduling-assistant-python
