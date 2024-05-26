@@ -3,3 +3,4 @@ go.mod
 go.sum
 token.json
 main.go
+*.txt
