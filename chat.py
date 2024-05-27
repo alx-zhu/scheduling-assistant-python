@@ -53,6 +53,11 @@ def response_generator(response):
         time.sleep(0.05)
 
 st.title("Scheduling Assistant")
+
+# Main body
+calendar(events=calendar_events, options=calendar_options, custom_css=custom_css)
+
+# Sidebar
 with st.sidebar:
   with st.container(height=500):
     # Initialize chat history
@@ -84,5 +89,3 @@ with st.sidebar:
             
       # Add assistant response to chat history
       st.session_state.messages.append({"role": "assistant", "content": response})
-
-calendar(events=calendar_events, options=calendar_options, custom_css=custom_css)

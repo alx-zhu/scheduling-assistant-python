@@ -2,9 +2,10 @@ from datetime import datetime, time, timedelta
 import tzlocal
 from googleapiclient.errors import HttpError
 
+local_tz = tzlocal.get_localzone()
+local_tz_name = tzlocal.get_localzone_name()
 
 def get_events_today(service):
-  local_tz = tzlocal.get_localzone()
   now = datetime.now(local_tz)
   start_of_today = datetime.combine(now.date(), datetime.min.time(), tzinfo=local_tz)
   start_of_tomorrow = start_of_today + timedelta(days=1)
@@ -50,19 +51,28 @@ def get_events_on_date(service, date):
   return events
 
 # https://developers.google.com/calendar/api/v3/reference
-def create_event(service, summary, start_time, end_time, **kwargs):
+def insert_event(service, summary: str, start_time: str, end_time: str, **kwargs):
   event = {
     'summary': summary,
     'start': {
-      'dateTime': start_time
+      'dateTime': start_time,
+      'timeZone': local_tz_name,
     },
     'end': {
-      'dateTime': end_time
-    }
+      'dateTime': end_time,
+      'timeZone': local_tz_name,
+    },
   }
 
-  event = service.events().insert(calendarId='primary', body={event}).execute()
-  print('Event created: %s' % (event.get('htmlLink')))
+  try:
+    event = service.events().insert(calendarId='primary', body=event).execute()
+    event_link = event.get('htmlLink', "")
+  except HttpError as error:
+    print(f" An error occurred: {error}")
+    event_link = ""
+
+  print('Event created: %s' % (event_link))
+  return event_link
 
   # event = {
   #   'summary': 'Google I/O 2015',
