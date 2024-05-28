@@ -1,4 +1,4 @@
-OPENAI_INITIAL_CONVERSAION = [
+OPENAI_INITIAL_CONVERSATION = [
     {
         "role": "system",
         "content": """
@@ -30,7 +30,7 @@ Here is an example conversation. I am the User and you are the Assistant. Please
         "content": """
 {
   "id": 2,
-  "message": "Sure, I can help you find a suitable time for your gym session. Based on your current schedule, it seems you have a couple of options:\n 1. Before event 1:\n Time: Anytime Before XX:XX PM \n Date: XXXX-XX-XX\n 2. Before event 2: \n Time: Between XX:XX PM and XX:XX PM \n Date: XXXX-XX-XX\n 3. After event 2: \n Time: Between XX:XX PM and XX:XX PM Date: XXXX-XX-XX\n Please let me know which option works better for you, or if you have a specific time in mind. Once you confirm, I'll schedule the gym session accordingly.",
+  "message": "Sure, I can help you find a suitable time for your gym session. Based on your current schedule, it seems you have a couple of options:\n\n 1. Before event 1:\n Time: Anytime Before XX:XX PM \n Date: XXXX-XX-XX\n\n 2. Before event 2: \n Time: Between XX:XX PM and XX:XX PM \n Date: XXXX-XX-XX\n 3. After event 2: \n\n Time: Between XX:XX PM and XX:XX PM Date: XXXX-XX-XX\n Please let me know which option works better for you, or if you have a specific time in mind. Once you confirm, I'll schedule the gym session accordingly.",
   "events": []
 }
 
@@ -76,7 +76,7 @@ Does this time work for you? If it does, I'll go ahead and add it to your schedu
 {
   "id": 5,
   "message": "Fantastic! Your gym session is now scheduled.",
-  "events": [{"summary": "Gym session", "start": "XXXX-XX-XXTXX:XX:XX-XX:XX", "end": "XXXX-XX-XXTXX:XX:XX-XX:XX"}]
+  "events": [{"title": "Gym session", "start": "XXXX-XX-XXTXX:XX:XX-XX:XX", "end": "XXXX-XX-XXTXX:XX:XX-XX:XX"}]
 }
 """,
     },
@@ -88,18 +88,8 @@ When responding, please describe the event by giving the day of the week, time, 
 
 IMPORTANT: New events CANNOT intersect with ANY existing events. Times must NOT overlap. You MUST respond in JSON Format.
 
-Please follow the format from the previous conversation. Please restart the conversation now by asking the user what they would like to schedule today. Return an EMPTY list of events for the first message.
+Please follow the format from the previous conversation. Please restart the conversation now by asking the user what they would like to schedule today. Return an EMPTY list of events for the first message. Make sure to include newline characters like the messages above.
 """,
-    },
-    {
-        "role": "user",
-        "content": """
-Today is Friday, December 22, 2023, and I live in the EST timezone.
-Here are my events for today:
-{"summary": "Project X meeting", "start": "2023-12-22T14:30:00-05:00", "end": "2023-10-28T15:30:00-05:00"} 
-{"summary": "Meeting with Chase", "start":"2023-12-22T16:15:00-05:00", "end": "2023-10-28T18:15:00-05:00"}
-{"summary": "Christmas Party", "start": "2023-12-22T20:00:00-05:00", "end": "2023-10-28T23:00:00-05:00"}
-          """,
     },
 ]
 
@@ -116,24 +106,6 @@ CALENDAR_OPTIONS = {
     # "initialView": "timelineDay",
     "initialView": "timeGridDay",
 }
-
-CALENDAR_EVENTS = [
-    {
-        "title": "Event 1",
-        "start": "2024-05-27T08:30:00",
-        "end": "2024-05-27T10:30:00",
-    },
-    {
-        "title": "Event 2",
-        "start": "2024-05-27T07:30:00",
-        "end": "2024-05-27T10:30:00",
-    },
-    {
-        "title": "Event 3",
-        "start": "2024-05-27T10:40:00",
-        "end": "2024-05-27T12:30:00",
-    },
-]
 
 CUSTOM_CSS = """
     .fc-event-past {

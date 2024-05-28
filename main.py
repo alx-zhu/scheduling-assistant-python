@@ -1,11 +1,12 @@
 import streamlit as st
 from datetime import datetime, timedelta
+import json
+import tzlocal
 from google_cloud_services import get_calendar_service
 from googleapiclient.errors import HttpError
 import google_calendar_helpers as gcal
 from constants import (
-    OPENAI_INITIAL_CONVERSAION,
-    CALENDAR_EVENTS,
+    OPENAI_INITIAL_CONVERSATION,
     CALENDAR_OPTIONS,
     CUSTOM_CSS,
 )
@@ -22,7 +23,6 @@ def get_cached_calendar_service():
 
 @st.cache_resource()
 def get_cached_openai_service():
-    print(os.environ.get("OPENAI_API_KEY"))
     return OpenAI()
 
 
@@ -41,39 +41,57 @@ def main():
     # Initialize session state
     if "display_conversation" not in st.session_state:
         st.session_state.display_conversation = []
+
+    if "calendar_events" not in st.session_state:
+        st.session_state.calendar_events = []
+        events = gcal.get_events_today(service)
+        for event in events:
+            start = event["start"].get("dateTime", None)
+            end = event["end"].get("dateTime", None)
+            title = event["summary"]
+            if start and end and title:
+                st.session_state.calendar_events.append(
+                    {
+                        "title": title,
+                        "start": start,
+                        "end": end,
+                    },
+                )
+        print(st.session_state.calendar_events)
+
     if "gpt_conversation" not in st.session_state:
-        st.session_state.gpt_conversation = OPENAI_INITIAL_CONVERSAION
+        st.session_state.gpt_conversation = OPENAI_INITIAL_CONVERSATION
+
+        # Add user's events today to the conversation history befor sending.
+        st.session_state.gpt_conversation.append(
+            {
+                "role": "user",
+                "content": f"Today is {datetime.now().date()} and I live in the timezone {tzlocal.get_localzone_name()}. Here are my events for today: {json.dumps(st.session_state.calendar_events)}",
+            }
+        )
+
         completion = open_ai.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=st.session_state.gpt_conversation,
         )
         response = completion.choices[0].message.content
+        st.session_state.gpt_conversation.append(
+            {"role": "assistant", "content": response}
+        )
         st.session_state.display_conversation.append(
             {"role": "assistant", "content": response}
         )
         print(response)
 
-    st.title("Google Calendar Events")
-    if st.button("Show Events"):
-        events = gcal.get_events_today(service)
-        # Prints the start and name of the next 10 events
-        for event in events:
-            start = event["start"].get("dateTime", event["start"].get("date"))
-            print(start, event["summary"])
-            st.write(f"{start} | {event['summary']}")
-
-    if st.button("Add Test Event"):
-        now = datetime.now()
-        later = now + timedelta(hours=1)
-        eventLink = gcal.insert_event(
-            service, "Test Event", now.isoformat(), later.isoformat()
-        )
-        st.write(f"New event created on Google Calendar: {eventLink}")
-
+    # Streamlit Page
     st.title("Scheduling Assistant")
 
     # Main body
-    calendar(events=CALENDAR_EVENTS, options=CALENDAR_OPTIONS, custom_css=CUSTOM_CSS)
+    calendar(
+        events=st.session_state.calendar_events,
+        options=CALENDAR_OPTIONS,
+        custom_css=CUSTOM_CSS,
+    )
 
     # Sidebar
     with st.sidebar:
@@ -95,8 +113,17 @@ def main():
                 st.session_state.display_conversation.append(
                     {"role": "user", "content": prompt}
                 )
+                st.session_state.gpt_conversation.append(
+                    {"role": "user", "content": prompt}
+                )
 
-                response = f"Echo:\n{prompt}"
+                # Send message to Open AI
+                completion = open_ai.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=st.session_state.gpt_conversation,
+                )
+                response = completion.choices[0].message.content
+
                 # Display assistant response in chat message container
                 with assistant_placeholder:
                     with st.chat_message("assistant"):
@@ -107,7 +134,27 @@ def main():
                 st.session_state.display_conversation.append(
                     {"role": "assistant", "content": response}
                 )
+                st.session_state.gpt_conversation.append(
+                    {"role": "assistant", "content": response}
+                )
 
 
 if __name__ == "__main__":
     main()
+
+    # st.title("Google Calendar Events")
+    # if st.button("Show Events"):
+    #     events = gcal.get_events_today(service)
+    #     # Prints the start and name of the next 10 events
+    #     for event in events:
+    #         start = event["start"].get("dateTime", event["start"].get("date"))
+    #         print(start, event["summary"])
+    #         st.write(f"{start} | {event['summary']}")
+
+    # if st.button("Add Test Event"):
+    #     now = datetime.now()
+    #     later = now + timedelta(hours=1)
+    #     eventLink = gcal.insert_event(
+    #         service, "Test Event", now.isoformat(), later.isoformat()
+    #     )
+    #     st.write(f"New event created on Google Calendar: {eventLink}")
