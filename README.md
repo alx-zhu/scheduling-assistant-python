@@ -4,4 +4,4 @@ The scheduling assistant provides a chat interface for users to schedule events 
 
 The assistant connects directly to Google Calendar to extract the user's events and communicates with the OpenAI API to implement chat functionality.
 
-![Watch the video](https://img.youtube.com/vi/w9p8-g6AXZc/0.jpg)](https://www.youtube.com/watch?v=w9p8-g6AXZc)
+[![Watch the video](https://img.youtube.com/vi/w9p8-g6AXZc/maxresdefault.jpg)](https://youtu.be/w9p8-g6AXZc)
