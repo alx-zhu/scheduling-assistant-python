@@ -1,9 +1,8 @@
 import streamlit as st
-from datetime import datetime, timedelta
+from datetime import datetime
 import json
 import tzlocal
 from google_cloud_services import get_calendar_service
-from googleapiclient.errors import HttpError
 import google_calendar_helpers as gcal
 from constants import (
     OPENAI_INITIAL_CONVERSATION,
@@ -13,7 +12,9 @@ from constants import (
 from openai import OpenAI
 import time
 from streamlit_calendar import calendar
-import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 @st.cache_resource()
@@ -75,11 +76,14 @@ def main():
             messages=st.session_state.gpt_conversation,
         )
         response = completion.choices[0].message.content
+
+        response_object = json.loads(response)
+        response_msg = response_object["message"]
         st.session_state.gpt_conversation.append(
             {"role": "assistant", "content": response}
         )
         st.session_state.display_conversation.append(
-            {"role": "assistant", "content": response}
+            {"role": "assistant", "content": response_msg.replace("\n", "  \n")}
         )
         print(response)
 
@@ -122,21 +126,49 @@ def main():
                     model="gpt-3.5-turbo",
                     messages=st.session_state.gpt_conversation,
                 )
+
                 response = completion.choices[0].message.content
+                # try:
+                #     response_object = json.loads(response, strict=False)
+                #     print(response_object)
+                # except json.JSONDecodeError as e:
+                #     print(f"JSON decode error: {e}")
+
+                # Parse the Open AI response into an object
+                response_object = json.loads(response)
+                print(response_object)
+                response_msg = response_object["message"]
+                response_events = response_object["events"]
 
                 # Display assistant response in chat message container
                 with assistant_placeholder:
                     with st.chat_message("assistant"):
-                        response = st.write_stream(response_generator(response))
-                    # st.markdown(response)
+                        # st.write_stream(response_generator(response_msg))
+                        st.markdown(response_msg.replace("\n", "  \n"))
 
                 # Add assistant response to chat history
                 st.session_state.display_conversation.append(
-                    {"role": "assistant", "content": response}
+                    {"role": "assistant", "content": response_msg}
                 )
                 st.session_state.gpt_conversation.append(
                     {"role": "assistant", "content": response}
                 )
+
+                # Add the event to the calendar if there are any
+                # for now, limit to a single event
+                if len(response_events) == 1:
+                    for event in response_events:
+                        eventLink = gcal.insert_event(
+                            service, event["title"], event["start"], event["end"]
+                        )
+                        st.session_state.display_conversation.append(
+                            {
+                                "role": "assistant",
+                                "content": f"View your new event in Google Calendar here: {eventLink}",
+                            }
+                        )
+                        st.session_state.calendar_events.append(event)
+                        st.rerun()
 
 
 if __name__ == "__main__":
