@@ -24,7 +24,7 @@ def get_cached_calendar_service():
 
 @st.cache_resource()
 def get_cached_openai_service():
-    return OpenAI()
+    return OpenAI(api_key=st.secrets["OPENAI"]["OPENAI_API_KEY"])
 
 
 def response_generator(response):
@@ -40,6 +40,9 @@ def main():
     open_ai = get_cached_openai_service()
 
     # Initialize session state
+    if "message_count" not in st.session_state:
+        st.session_state.message_count = 0
+
     if "display_conversation" not in st.session_state:
         st.session_state.display_conversation = []
 
@@ -109,7 +112,14 @@ def main():
             assistant_placeholder = st.empty()
 
             # React to user input
-            if prompt := st.chat_input("Message the Scheduling Assistant"):
+            if st.session_state.message_count > 10:
+                st.warning(
+                    "You have passed your limit of 10 messages. In order to keep this service free, there is a 10 message limit per user. Please contact alexanderzhu07@gmail.com for any questions."
+                )
+
+            elif prompt := st.chat_input("Message the Scheduling Assistant"):
+                st.session_state.message_count += 1
+
                 # Display user message in chat message container
                 with user_placeholder:
                     st.chat_message("user").markdown(prompt)

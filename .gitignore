@@ -6,3 +6,4 @@ main.go
 *.txt
 .env
 _*
+secrets.toml
